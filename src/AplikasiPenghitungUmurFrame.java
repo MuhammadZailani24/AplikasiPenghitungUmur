@@ -4,17 +4,20 @@
  * and open the template in the editor.
  */
 import java.time.LocalDate;
-import java.time.Period;
-import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import javax.swing.JOptionPane;
-import java.time.ZoneId; // Diperlukan untuk konversi Date ke LocalDate
+
+
+
 /**
  *
  * @author Acer
  */
 
 public class AplikasiPenghitungUmurFrame extends javax.swing.JFrame {
+     // Mendeklarasikan helper sebagai instance variable
+    private PenghitungUmurHelper helper;
 
     /**
      * Creates new form AplikasiPenghitungUmurFrame
@@ -23,6 +26,7 @@ public class AplikasiPenghitungUmurFrame extends javax.swing.JFrame {
         initComponents();
         jTextField1.setEditable(false);
         jTextField2.setEditable(false);
+        helper = new PenghitungUmurHelper();  // Inisialisasi objek helper di sini
     }
 
     /**
@@ -51,6 +55,12 @@ public class AplikasiPenghitungUmurFrame extends javax.swing.JFrame {
         jLabel2.setText("Umur Anda ");
 
         jLabel3.setText("Hari Ulang Tahun Berikutnya ");
+
+        jDateChooser1.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                jDateChooser1PropertyChange(evt);
+            }
+        });
 
         jButton1.setText("HItung");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -132,66 +142,35 @@ public class AplikasiPenghitungUmurFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-      Date tanggalLahirDate = jDateChooser1.getDate();
+   Date tanggalLahir = jDateChooser1.getDate();  // Ganti dengan jDateChooser1
+    if (tanggalLahir != null) {
+        // Menghitung umur dan hari ulang tahun berikutnya
+        LocalDate lahir = tanggalLahir.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate sekarang = LocalDate.now();
+        String umur = helper.hitungUmurDetail(lahir, sekarang);  // Panggil metode helper
+        jTextField1.setText(umur);  // Mengisi umur di jTextField1
         
-        // 1. Validasi Input
-        if (tanggalLahirDate == null) {
-            JOptionPane.showMessageDialog(this, "Mohon masukkan Tanggal Lahir Anda.", "Error", JOptionPane.ERROR_MESSAGE);
-            jTextField1.setText("");
-            jTextField2.setText("");
-            return;
-        }
+        // Menghitung tanggal ulang tahun berikutnya
+        LocalDate ulangTahunBerikutnya = helper.hariUlangTahunBerikutnya(lahir, sekarang);  // Panggil metode helper
+        String hariUlangTahunBerikutnya = helper.getDayOfWeekInIndonesian(ulangTahunBerikutnya);
         
-        // Konversi Date dari JDateChooser ke LocalDate (Objek Java Modern Date/Time)
-        LocalDate tanggalLahir = tanggalLahirDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate hariIni = LocalDate.now();
+        // Memformat tanggal ulang tahun
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String tanggalUlangTahunBerikutnya = ulangTahunBerikutnya.format(formatter);
         
-        // Periksa apakah tanggal lahir di masa depan
-        if (tanggalLahir.isAfter(hariIni)) {
-            JOptionPane.showMessageDialog(this, "Tanggal Lahir tidak boleh di masa depan.", "Error", JOptionPane.ERROR_MESSAGE);
-            jTextField1.setText("");
-            jTextField2.setText("");
-            jDateChooser1.setDate(null);
-            return;  // TODO add your handling code here:
-            // --- Perhitungan Umur ---
-        
-        // Menghitung periode (umur) antara tanggal lahir dan hari ini
-        Period periode = Period.between(tanggalLahir, hariIni);
-        int tahun = periode.getYears();
-        int bulan = periode.getMonths();
-        int hari = periode.getDays();
-        
-        // Menampilkan umur ke jTextField1
-        jTextField1.setText(tahun + " Tahun, " + bulan + " Bulan, " + hari + " Hari");
-        
-        // --- Perhitungan Hari Menuju Ulang Tahun Berikutnya ---
-        
-        // Tentukan tanggal ulang tahun berikutnya
-        LocalDate ultahTahunIni = tanggalLahir.withYear(hariIni.getYear());
-        LocalDate ultahBerikutnya;
-        
-        // Jika ulang tahun sudah lewat di tahun ini, ambil ulang tahun tahun depan
-        if (ultahTahunIni.isBefore(hariIni) || ultahTahunIni.isEqual(hariIni)) {
-            ultahBerikutnya = ultahTahunIni.plusYears(1);
-        } else {
-            // Jika ulang tahun belum tiba di tahun ini
-            ultahBerikutnya = ultahTahunIni;
-        }
-        
-        // Hitung selisih hari antara hari ini dan ulang tahun berikutnya
-        long hariMenujuUltah = ChronoUnit.DAYS.between(hariIni, ultahBerikutnya);
-        
-        // Menampilkan hasil ke jTextField2
-        if (hariMenujuUltah == 0) {
-            jTextField2.setText("Hari Ini! Selamat Ulang Tahun! 🎉");
-        } else {
-            jTextField2.setText(hariMenujuUltah + " Hari");
-        }
-    }//GEN-LAST:event_jButton1ActionPerformed
+        // Menampilkan hari ulang tahun berikutnya dan tanggal
+        jTextField2.setText(hariUlangTahunBerikutnya + " (" + tanggalUlangTahunBerikutnya + ")");
     }
+  
+    }//GEN-LAST:event_jButton1ActionPerformed
+
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
           System.exit(0);        // TODO add your handling code here:
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jDateChooser1PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_jDateChooser1PropertyChange
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jDateChooser1PropertyChange
 
     /**
      * @param args the command line arguments
